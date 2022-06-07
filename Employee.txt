@@ -1,0 +1,128 @@
+cqlsh:vaghdevi> create table employee_info( emp_id int, emp_name text, designation text, date_of_joining date, salary int, dept_name text,primary key (emp_id,salary));
+cqlsh:vaghdevi> begin batch insert into employee_info (emp_id, emp_name, designation, date_of_joining, salary, dept_name) values (121, 'Joseph', 'Senior Engineer', '2020-11-02', 6500000, 'Operations'); insert into employee_info (emp_id, emp_name, designation, date_of_joining, salary, dept_name) values (143, 'Prem', 'Finance Head', '1998-01-02', 1200000, 'Finance'); insert into employee_info (emp_id, emp_name, designation, date_of_joining, salary, dept_name) values (166, 'Adithya', 'Project Manager', '1996-04-05', 2400000, 'Sales'); insert into employee_info (emp_id, emp_name, designation, date_of_joining, salary, dept_name) values (00112, 'Yamuna', 'Assistant Manager', '2020-09-03', 10000000, 'Finance'); insert into employee_info (emp_id, emp_name, designation, date_of_joining, salary, dept_name) values (111, 'Ram', 'Digital marketing Head', '2021-07-07', 1000000, 'Digital marketing'); apply batch;
+cqlsh:vaghdevi> update employee_info set emp_name='Radha',dept_name='Finance' where emp_id=121;
+InvalidRequest: Error from server: code=2200 [Invalid query] message="Some clustering keys are missing: salary"
+cqlsh:vaghdevi> update employee_info set emp_name='Radha',dept_name='Finance' where emp_id=121 and salary=6500000;
+cqlsh:vaghdevi> select * from employee_info where emp_id=121;
+
+ emp_id | salary  | date_of_joining | dept_name | designation     | emp_name
+--------+---------+-----------------+-----------+-----------------+----------
+    121 | 6500000 |      2020-11-02 |       Finance | Senior Engineer |     Radha
+
+(1 rows)
+cqlsh:vaghdevi> select * from employee_info order by salary;
+InvalidRequest: Error from server: code=2200 [Invalid query] message="ORDER BY is only supported when the partition key is restricted by an EQ or an IN."
+cqlsh:vaghdevi> select * from employee_info where emp_id in (121,111,112,143,166) order by salary;
+InvalidRequest: Error from server: code=2200 [Invalid query] message="Cannot page queries with both ORDER BY and a IN restriction on the partition key; you must either remove the ORDER BY or the IN and sort client side, or disable paging for this query"
+cqlsh:vaghdevi> paging off
+Disabled Query paging.
+cqlsh:vaghdevi> select * from employee_info where emp_id in (121,111,112,143,166) order by salary;
+
+ emp_id | salary   | date_of_joining | dept_name | designation       | emp_name
+--------+----------+-----------------+-----------+-------------------+----------
+    111 |  1000000 |      2021-07-07 | Digital marketing |      Digital marketing Head |      Ram
+    143 |  1200000 |      1998-01-02 |       Finance |   Finance Head |   Prem
+    166 |  2400000 |      1996-04-05 |     Sales |   Project Manager | Adithya
+    121 |  6500000 |      2020-11-02 |       Finance |   Senior Engineer |     Radha
+      112 | 10000000 |      2020-09-03 |       Finance | Assistant Manager |   Yamuna
+
+(5 rows)
+cqlsh:vaghdevi> select * from employee_info where emp_id in (select emp_id from employee) order by salary;
+SyntaxException: line 1:45 mismatched input 'select' expecting ')' (... employee_info where emp_id in ([select]...)
+cqlsh:vaghdevi> alter table employee_info add projects set<text>;
+cqlsh:vaghdevi> update employee_info set projects={'machine learning','Big data Analytics'} where emp_id=121 and salary=10000000;
+cqlsh:vaghdevi> select * from employee_info where emp_id in (select emp_id from employee) order by salary;
+SyntaxException: line 1:45 mismatched input 'select' expecting ')' (... employee_info where emp_id in ([select]...)
+cqlsh:vaghdevi> select * from employee_info where emp_id in (121,111,112,143,166) order by salary;
+
+ emp_id | salary   | date_of_joining | dept_name | designation       | emp_name | projects
+--------+----------+-----------------+-----------+-------------------+----------+------------------------------
+    111 |  1000000 |      2021-07-07 | Digital marketing |      Digital marketing Head |      Ram |                         null
+    143 |  1200000 |      1998-01-02 |       Finance |   Finance Head |   Prem |                         null
+    166 |  2400000 |      1996-04-05 |     Sales |   Project Manager | Adithya |                         null
+    121 |  6500000 |      2020-11-02 |       Finance |   Senior Engineer |     Radha |                         null
+      112 | 10000000 |      2020-09-03 |       Finance | Assistant Manager |   Yamuna |                         null
+    121 | 10000000 |            null |      null |              null |     null | {'machine learning', 'Big data Analytics'}
+
+(6 rows)
+cqlsh:vaghdevi> delete from employee_info where emp_id =121 and salaey=10000000;
+InvalidRequest: Error from server: code=2200 [Invalid query] message="Undefined column name salaey"
+cqlsh:vaghdevi> delete from employee_info where emp_id =121 and salary=10000000;
+cqlsh:vaghdevi> select * from employee_info where emp_id in (121,111,112,143,166) order by salary;
+
+ emp_id | salary   | date_of_joining | dept_name | designation       | emp_name | projects
+--------+----------+-----------------+-----------+-------------------+----------+----------
+    111 |  1000000 |      2021-07-07 | Digital marketing |      Digital marketing Head |      Ram |     null
+    143 |  1200000 |      1998-01-02 |       Finance |   Finance Head |   Prem |     null
+    166 |  2400000 |      1996-04-05 |     Sales |   Project Manager | Adithya |     null
+    121 |  6500000 |      2020-11-02 |       Finance |   Senior Engineer |     Radha |     null
+      112 | 10000000 |      2020-09-03 |       Finance | Assistant Manager |   Yamuna |     null
+
+(5 rows)
+cqlsh:vaghdevi> update employee_info set projects={'machine learning','Big data Analytics'} where emp_id=121 and salary=1000000;
+cqlsh:vaghdevi> select * from employee_info where emp_id in (121,111,112,143,166) order by salary;
+
+ emp_id | salary   | date_of_joining | dept_name | designation       | emp_name | projects
+--------+----------+-----------------+-----------+-------------------+----------+------------------------------
+    121 |  1000000 |            null |      null |              null |     null | {'machine learning', 'Big data Analytics'}
+    111 |  1000000 |      2021-07-07 | Digital marketing |      Digital marketing Head |      Ram |                         null
+    143 |  1200000 |      1998-01-02 |       Finance |   Finance Head |   Prem |                         null
+    166 |  2400000 |      1996-04-05 |     Sales |   Project Manager | Adithya |                         null
+    121 |  6500000 |      2020-11-02 |       Finance |   Senior Engineer |     Radha |                         null
+      112 | 10000000 |      2020-09-03 |       Finance | Assistant Manager |   Yamuna |                         null
+
+(6 rows)
+cqlsh:vaghdevi> select * from employee_info where emp_id=121 and salary=1000000;
+
+ emp_id | salary  | date_of_joining | dept_name | designation | emp_name | projects
+--------+---------+-----------------+-----------+-------------+----------+------------------------------
+    121 | 1000000 |            null |      null |        null |     null | {'machine learning', 'Big data Analytics'}
+
+(1 rows)
+cqlsh:vaghdevi> select projects from employee_info where emp_id=121 and salary=1000000;
+
+ projects
+------------------------------
+ {'machine learning', 'Big data Analytics'}
+
+(1 rows)
+cqlsh:vaghdevi> begin batch
+            ... insert into employee_info (emp_id, emp_name, designation, date_of_joining, salary, dept_name) values (122, 'Danush', 'Chief Administrator', '2019-06-06', 2000000, ' Administration') using ttl=15; apply batch;
+SyntaxException: line 2:11128 no viable alternative at input '=' (... 2000000, ' Administration') using ttl[=]...)
+cqlsh:vaghdevi> begin batch insert into employee_info (emp_id, emp_name, designation, date_of_joining, salary, dept_name) values (122, 'Danush', 'Chief Administrator', '2019-06-06', 2000000, ' Administration') using ttl 15; apply batch;
+cqlsh:vaghdevi> select * from employee_info;
+
+ emp_id | salary   | date_of_joining | dept_name | designation       | emp_name | projects
+--------+----------+-----------------+-----------+-------------------+----------+------------------------------
+    122 |  2000000 |      2019-06-06 |   Administration |    Chief Administrator |    Danush |                         null
+    121 |  1000000 |            null |      null |              null |     null | {'machine learning', 'Big data Analytics'}
+    121 |  6500000 |      2020-11-02 |       Finance |   Senior Engineer |     Radha |                         null
+      112 | 10000000 |      2020-09-03 |       Finance | Assistant Manager |   Yamuna |                         null
+    143 |  1200000 |      1998-01-02 |       Finance |   Finance Head |   Prem |                         null
+    166 |  2400000 |      1996-04-05 |     Sales |   Project Manager | Adithya |                         null
+    111 |  1000000 |      2021-07-07 | Digital marketing |      Digital marketing Head |      Ram |                         null
+
+(112 rows)
+cqlsh:vaghdevi> select * from employee_info;
+
+ emp_id | salary   | date_of_joining | dept_name | designation       | emp_name | projects
+--------+----------+-----------------+-----------+-------------------+----------+------------------------------
+    121 |  1000000 |            null |      null |              null |     null | {'machine learning', 'Big data Analytics'}
+    121 |  6500000 |      2020-11-02 |       Finance |   Senior Engineer |     Radha |                         null
+      112 | 10000000 |      2020-09-03 |       Finance | Assistant Manager |   Yamuna |                         null
+    143 |  1200000 |      1998-01-02 |       Finance |   Finance Head |   Prem |                         null
+    166 |  2400000 |      1996-04-05 |     Sales |   Project Manager | Adithya |                         null
+    111 |  1000000 |      2021-07-07 | Digital marketing |      Digital marketing Head |      Ram |                         null
+
+(6 rows)
+cqlsh:vaghdevi> delete from employee_info where emp_id=121 and salary=1000000;
+cqlsh:vaghdevi> update employee_info set projects={'machine learning','Big data Analytics'} where emp_id=121 and salary=6500000;
+cqlsh:vaghdevi> select * from employee_info;
+
+ emp_id | salary   | date_of_joining | dept_name | designation       | emp_name | projects
+--------+----------+-----------------+-----------+-------------------+----------+------------------------------
+    121 |  6500000 |      2020-11-02 |       Finance |   Senior Engineer |     Radha | {'machine learning', 'Big data Analytics'}
+      112 | 10000000 |      2020-09-03 |       Finance | Assistant Manager |   Yamuna |                         null
+    143 |  1200000 |      1998-01-02 |       Finance |   Finance Head |   Prem |                         null
+    166 |  2400000 |      1996-04-05 |     Sales |   Project Manager | Adithya |                         null
+    111 |  1000000 |      2021-07-07 | Digital marketing |      Digital marketing Head |      Ram |                         null
