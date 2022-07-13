@@ -1,0 +1,50 @@
+(base) bmsce@bmsce-Precision-T1700:~$ spark-shell
+22/07/02 09:33:57 WARN Utils: Your hostname, bmsce-Precision-T1700 resolves to a loopback address: 127.0.1.1; using 10.124.7.83 instead (on interface enp1s0)
+22/07/02 09:33:57 WARN Utils: Set SPARK_LOCAL_IP if you need to bind to another address
+22/07/02 09:33:58 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+Using Spark's default log4j profile: org/apache/spark/log4j-defaults.properties
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+Spark context Web UI available at http://10.124.7.83:4040
+Spark context available as 'sc' (master = local[*], app id = local-1656734644119).
+Spark session available as 'spark'.
+Welcome to
+      ____              __
+     / __/__  ___ _____/ /__
+    _\ \/ _ \/ _ `/ __/  '_/
+   /___/ .__/\_,_/_/ /_/\_\   version 2.4.8
+      /_/
+         
+Using Scala version 2.11.12 (OpenJDK 64-Bit Server VM, Java 1.8.0_232)
+Type in expressions to have them evaluated.
+Type :help for more information.
+
+scala> val data=sc.textFile("/home/bmsce/Desktop/sparkdata.txt")
+data: org.apache.spark.rdd.RDD[String] = /home/bmsce/Desktop/sparkdata.txt MapPartitionsRDD[1] at textFile at <console>:24
+
+scala> data.collect;
+res0: Array[String] = Array(bms college of engineering, bms college of architecture, bms id, visweswariah technological university)
+
+scala> val splitdata.collect;
+<console>:1: error: '=' expected but ';' found.
+val splitdata.collect;
+                     ^
+
+scala> val splitdata=data.flatMap(line=>line.split(" "));
+splitdata: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[2] at flatMap at <console>:25
+
+scala> splitdata.collect;
+res1: Array[String] = Array(bms, college, of, engineering, bms, college, of, architecture, bms, id, visweswariah, technological, university)
+
+scala> val mapdata=splitdata.map(word=>(word,1));
+mapdata: org.apache.spark.rdd.RDD[(String, Int)] = MapPartitionsRDD[3] at map at <console>:25
+
+scala> mapdata.collect;
+res2: Array[(String, Int)] = Array((bms,1), (college,1), (of,1), (engineering,1), (bms,1), (college,1), (of,1), (architecture,1), (bms,1), (id,1), (visweswariah,1), (technological,1), (university,1))
+
+scala> val reducedata=mapdata.reduceByKey(_+_);
+reducedata: org.apache.spark.rdd.RDD[(String, Int)] = ShuffledRDD[4] at reduceByKey at <console>:25
+
+scala> reducedata.collect;
+res4: Array[(String, Int)] = Array((university,1), (bms,3), (technological,1), (college,2), (engineering,1), (architecture,1), (of,2), (id,1), (visweswariah,1))
+
